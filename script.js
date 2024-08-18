@@ -33,7 +33,7 @@ function dealCards() {
 function renderCard(card, faceUp = true) {
     const cardElement = document.createElement('div');
     cardElement.classList.add('card');
-    cardElement.draggable = true;
+    cardElement.draggable = faceUp; // Only set draggable for face-up cards
     cardElement.dataset.suit = card.suit;
     cardElement.dataset.value = card.value;
     if (faceUp) {
@@ -47,6 +47,7 @@ function renderCard(card, faceUp = true) {
     }
     return cardElement;
 }
+
 
 function renderGame() {
     const deckElement = document.getElementById('deck');
@@ -109,21 +110,6 @@ function renderGame() {
     if (checkWin()) {
         displayWin();
     }
-}
-
-function getCardData(cardElement) {
-    const pile = cardElement.closest('.pile');
-    let cards;
-    if (pile) {
-        cards = getMovableCards(pile, cardElement);
-    } else {
-        // Single card from waste
-        cards = [{suit: cardElement.dataset.suit, value: cardElement.dataset.value}];
-    }
-    return {
-        cards: cards.map(card => ({suit: card.suit || card.dataset.suit, value: card.value || card.dataset.value})),
-        sourceIndex: pile ? pile.dataset.index : -1
-    };
 }
 
 function addDragAndDropListeners() {
@@ -215,12 +201,6 @@ function removeCardFromSource(card) {
     if (wasteIndex !== -1) {
         waste.splice(wasteIndex, 1);
     }
-}
-
-function getMovableCards(pile, startCard) {
-    const cards = Array.from(pile.querySelectorAll('.card'));
-    const startIndex = cards.indexOf(startCard);
-    return cards.slice(startIndex);
 }
 
 function findCard(cardData) {
@@ -346,6 +326,12 @@ function handleCardClick(e) {
         const sourceIndex = parseInt(pile.dataset.index);
         const allCards = Array.from(pile.querySelectorAll('.card'));
         const clickedCardIndex = allCards.indexOf(cardElement);
+
+        // Check if the clicked card is face-up
+        if (!tableau[sourceIndex][clickedCardIndex].faceUp) {
+            return; // Exit the function if the card is face-down
+        }
+
         const cardsToMove = tableau[sourceIndex].slice(clickedCardIndex);
 
         if (cardsToMove.length > 0) {
@@ -360,6 +346,7 @@ function handleCardClick(e) {
         }
     }
 }
+
 
 function initGame() {
     deck = [];
