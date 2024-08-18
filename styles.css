@@ -60,10 +60,44 @@ body {
     margin-bottom: 20px;
 }
 
-#deck, #waste {
+#deck {
     width: 62px;
     height: 92px;
     margin: 5px;
+    border: 1px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 5px;
+    position: relative;
+}
+
+#waste {
+    width: 62px;
+    height: 92px;
+    margin: 5px;
+    border: 1px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 5px;
+}
+
+#redo-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none; /* Hide by default */
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    z-index: 10; /* Ensure it's above the cards */
+}
+
+#redo-button:hover {
+    background-color: rgba(255, 255, 255, 1);
 }
 
 #foundation {
@@ -98,14 +132,6 @@ body {
 .tableau-pile .card {
     position: absolute;
     top: 0;
-}
-
-#redo-button {
-    margin: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    display: none;
 }
 
 .card-value {
@@ -146,6 +172,49 @@ body {
     z-index: 1000;
 }
 
+#settings-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 24px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#settings-menu {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+#settings-menu.hidden {
+    display: none;
+}
+
+.setting-option {
+    margin-bottom: 10px;
+}
+
+.setting-option label {
+    margin-right: 10px;
+}
+
+#sound-toggle {
+    margin-left: 10px;
+}
+
 @media (max-width: 600px) {
     .card {
         width: 40px;
@@ -153,9 +222,20 @@ body {
         font-size: 14px;
     }
 
+    #deck, #waste {
+        width: 42px;
+        height: 62px;
+    }
+
     #deck, #waste, .pile {
         width: 42px;
         height: 62px;
+    }
+
+    #redo-button {
+        width: 24px;
+        height: 24px;
+        font-size: 16px;
     }
 
     .tableau-pile {

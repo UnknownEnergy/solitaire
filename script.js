@@ -238,9 +238,15 @@ function isValidTableauMove(card, tableauIndex) {
 
 function drawCard() {
     if (deck.length > 0) {
-        const card = deck.pop();
-        waste.push(card);
-        flipCard(renderCard(card));
+        const cardsToMove = Math.min(drawCount, deck.length);
+        for (let i = 0; i < cardsToMove; i++) {
+            const card = deck.pop();
+            card.faceUp = true;
+            waste.push(card);
+            if (i === cardsToMove - 1) {
+                flipCard(renderCard(card));
+            }
+        }
         renderGame();
     }
 
@@ -258,14 +264,16 @@ function flipCard(cardElement) {
 }
 
 function playSound(soundId) {
-    const sound = document.getElementById(soundId);
-    sound.currentTime = 0;
-    sound.play();
+    if (soundEnabled) {
+        const sound = document.getElementById(soundId);
+        sound.currentTime = 0;
+        sound.play();
+    }
 }
 
 function showRedoButton() {
     const redoButton = document.getElementById('redo-button');
-    redoButton.style.display = 'inline-block';
+    redoButton.style.display = 'flex';
 }
 
 function hideRedoButton() {
@@ -276,6 +284,7 @@ function hideRedoButton() {
 function redoDeck() {
     deck = waste.reverse();
     waste = [];
+    deck.forEach(card => card.faceUp = false);
     hideRedoButton();
     renderGame();
 }
@@ -347,6 +356,56 @@ function handleCardClick(e) {
     }
 }
 
+function toggleSettingsMenu() {
+    settingsMenu.classList.toggle('hidden');
+}
+
+function updateDrawOption(e) {
+    drawCount = parseInt(e.target.value);
+    saveSettings();
+}
+
+function saveSettings() {
+    const settings = {
+        drawCount: drawCount,
+        soundEnabled: soundEnabled
+    };
+    localStorage.setItem('solitaireSettings', JSON.stringify(settings));
+}
+
+let drawCount = 1;
+let soundEnabled = true;
+
+loadSettings();
+
+
+function loadSettings() {
+    const savedSettings = localStorage.getItem('solitaireSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        drawCount = settings.drawCount || 1;
+        // Update UI
+        const drawOptionSelect = document.getElementById('draw-option');
+        if (drawOptionSelect) {
+            drawOptionSelect.value = drawCount;
+        }
+        soundEnabled = settings.soundEnabled !== undefined ? settings.soundEnabled : true;
+    }
+}
+
+const settingsButton = document.getElementById('settings-button');
+const settingsMenu = document.getElementById('settings-menu');
+const drawOption = document.getElementById('draw-option');
+
+const soundToggle = document.getElementById('sound-toggle');
+
+// Add this to your existing event listeners
+soundToggle.addEventListener('change', updateSoundSetting);
+
+function updateSoundSetting(e) {
+    soundEnabled = e.target.checked;
+    saveSettings();
+}
 
 function initGame() {
     deck = [];
@@ -360,10 +419,20 @@ function initGame() {
     const newGameButton = document.getElementById('new-game-button');
     if (newGameButton) newGameButton.remove();
 
+    loadSettings();
+
+    settingsButton.addEventListener('click', toggleSettingsMenu);
+    drawOption.addEventListener('change', updateDrawOption);
+
     createDeck();
     dealCards();
     renderGame();
     hideRedoButton();
+
+    soundToggle.checked = soundEnabled;
+    settingsButton.addEventListener('click', toggleSettingsMenu);
+    drawOption.addEventListener('change', updateDrawOption);
+    soundToggle.addEventListener('change', updateSoundSetting);
 }
 
 initGame();

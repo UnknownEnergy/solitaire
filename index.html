@@ -9,15 +9,30 @@
 <body>
 <div id="game-container">
     <div class="top-area">
-        <div id="deck-waste">
-            <div id="deck"></div>
-            <div id="waste"></div>
+        <div>
+            <div id="deck" class="pile"></div>
+            <div id="waste" class="pile"></div>
         </div>
+        <button id="redo-button" title="Redo Deck">↺</button>
         <div id="foundation"></div>
     </div>
     <div id="tableau"></div>
+    <div id="settings-button">⚙️</div>
+    <div id="settings-menu" class="hidden">
+        <h3>Settings</h3>
+        <div class="setting-option">
+            <label for="draw-option">Draw:</label>
+            <select id="draw-option">
+                <option value="1">One card</option>
+                <option value="3">Three cards</option>
+            </select>
+        </div>
+        <div class="setting-option">
+            <label for="sound-toggle">Sound:</label>
+            <input type="checkbox" id="sound-toggle" checked>
+        </div>
+    </div>
 </div>
-<button id="redo-button">Redo Deck</button>
 <audio id="card-flip-sound" src="card-flip.mp3"></audio>
 <audio id="card-place-sound" src="card-place.mp3"></audio>
 <script src="script.js"></script>
