@@ -9,7 +9,7 @@ let tableau = [[], [], [], [], [], [], []];
 function createDeck() {
     for (let suit of suits) {
         for (let value of values) {
-            deck.push({ suit, value, faceUp: false });
+            deck.push({suit, value, faceUp: false});
         }
     }
     shuffleDeck();
@@ -47,21 +47,6 @@ function renderCard(card, faceUp = true) {
     }
     return cardElement;
 }
-
-function flipCard(cardElement) {
-    cardElement.classList.add('flip');
-    playSound('card-flip-sound');
-    setTimeout(() => {
-        cardElement.classList.remove('flip');
-    }, 300);
-}
-
-function playSound(soundId) {
-    const sound = document.getElementById(soundId);
-    sound.currentTime = 0;
-    sound.play();
-}
-
 
 function renderGame() {
     const deckElement = document.getElementById('deck');
@@ -126,28 +111,89 @@ function renderGame() {
     }
 }
 
+function getCardData(cardElement) {
+    const pile = cardElement.closest('.pile');
+    let cards;
+    if (pile) {
+        cards = getMovableCards(pile, cardElement);
+    } else {
+        // Single card from waste
+        cards = [{suit: cardElement.dataset.suit, value: cardElement.dataset.value}];
+    }
+    return {
+        cards: cards.map(card => ({suit: card.suit || card.dataset.suit, value: card.value || card.dataset.value})),
+        sourceIndex: pile ? pile.dataset.index : -1
+    };
+}
+
 function addDragAndDropListeners() {
     const cards = document.querySelectorAll('.card');
     const piles = document.querySelectorAll('.pile');
+    const deckElement = document.getElementById('deck');
+    const wasteElement = document.getElementById('waste');
 
     cards.forEach(card => {
         card.addEventListener('dragstart', dragStart);
-        card.addEventListener('touchstart', touchStart);
+        card.addEventListener('touchstart', touchStart, {passive: false});
         card.addEventListener('click', handleCardClick);
     });
 
     piles.forEach(pile => {
         pile.addEventListener('dragover', dragOver);
         pile.addEventListener('drop', drop);
-        pile.addEventListener('touchend', touchEnd);
     });
+
+    deckElement.addEventListener('click', handleDeckClick);
+    deckElement.addEventListener('touchend', handleDeckClick);
+
+    wasteElement.addEventListener('click', handleWasteClick);
+    wasteElement.addEventListener('touchend', handleWasteClick);
+
+    document.addEventListener('touchmove', touchMove, {passive: false});
+    document.addEventListener('touchend', touchEnd);
 }
 
+function handleDeckClick(e) {
+    e.preventDefault();
+    drawCard();
+}
+
+function handleWasteClick(e) {
+    e.preventDefault();
+    if (waste.length > 0) {
+        const wasteCard = waste[waste.length - 1];
+        const bestMove = findBestMove(wasteCard);
+        if (bestMove) {
+            if (bestMove.type === 'foundation') {
+                moveToFoundation(wasteCard, bestMove.index);
+            } else if (bestMove.type === 'tableau') {
+                moveToTableau({cards: [wasteCard], sourceIndex: -1}, bestMove.index);
+            }
+        }
+    }
+}
+
+
 function touchStart(e) {
+    e.preventDefault();
     const cardElement = e.target.closest('.card');
     if (cardElement) {
-        e.preventDefault();
         cardElement.classList.add('dragging');
+        cardElement.dataset.touchStartX = e.touches[0].clientX;
+        cardElement.dataset.touchStartY = e.touches[0].clientY;
+    }
+}
+
+function touchMove(e) {
+    e.preventDefault();
+    const cardElement = document.querySelector('.card.dragging');
+    if (cardElement) {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - cardElement.dataset.touchStartX;
+        const deltaY = touchY - cardElement.dataset.touchStartY;
+
+        cardElement.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
     }
 }
 
@@ -155,15 +201,15 @@ function touchEnd(e) {
     e.preventDefault();
     const cardElement = document.querySelector('.card.dragging');
     if (cardElement) {
-        const targetPile = e.target.closest('.pile');
+        cardElement.style.transform = '';
+        cardElement.classList.remove('dragging');
+
+        const touch = e.changedTouches[0];
+        const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetPile = targetElement.closest('.pile');
+
         if (targetPile) {
-            const cardData = {
-                cards: [{
-                    suit: cardElement.dataset.suit,
-                    value: cardElement.dataset.value
-                }],
-                sourceIndex: cardElement.closest('.pile')?.dataset.index || -1
-            };
+            const cardData = getCardData(cardElement);
 
             if (targetPile.classList.contains('foundation-pile')) {
                 moveToFoundation(cardData.cards[0], parseInt(targetPile.dataset.index));
@@ -171,25 +217,15 @@ function touchEnd(e) {
                 moveToTableau(cardData, parseInt(targetPile.dataset.index));
             }
         }
-        cardElement.classList.remove('dragging');
     }
 }
+
 
 function dragStart(e) {
     const cardElement = e.target.closest('.card');
     if (cardElement) {
-        const pile = cardElement.closest('.pile');
-        let cards;
-        if (pile) {
-            cards = getMovableCards(pile, cardElement);
-        } else {
-            // Single card from waste
-            cards = [{ suit: cardElement.dataset.suit, value: cardElement.dataset.value }];
-        }
-        e.dataTransfer.setData('text/plain', JSON.stringify({
-            cards: cards.map(card => ({ suit: card.suit || card.dataset.suit, value: card.value || card.dataset.value })),
-            sourceIndex: pile ? pile.dataset.index : -1
-        }));
+        const cardData = getCardData(cardElement);
+        e.dataTransfer.setData('text/plain', JSON.stringify(cardData));
     }
 }
 
@@ -246,7 +282,6 @@ function moveToTableau(cardData, tableauIndex) {
 
         // Add cards to the target tableau pile
         tableau[tableauIndex].push(...sourceCards);
-        renderGame();
         playSound('card-place-sound');
         renderGame();
     }
@@ -304,7 +339,7 @@ function isValidTableauMove(card, tableauIndex) {
     }
     const topCard = tableauPile[tableauPile.length - 1];
     return (card.suit === '♠' || card.suit === '♣') !== (topCard.suit === '♠' || topCard.suit === '♣') &&
-           values.indexOf(card.value) === values.indexOf(topCard.value) - 1;
+        values.indexOf(card.value) === values.indexOf(topCard.value) - 1;
 }
 
 function drawCard() {
@@ -318,6 +353,20 @@ function drawCard() {
     if (deck.length === 0) {
         showRedoButton();
     }
+}
+
+function flipCard(cardElement) {
+    cardElement.classList.add('flip');
+    playSound('card-flip-sound');
+    setTimeout(() => {
+        cardElement.classList.remove('flip');
+    }, 300);
+}
+
+function playSound(soundId) {
+    const sound = document.getElementById(soundId);
+    sound.currentTime = 0;
+    sound.play();
 }
 
 function showRedoButton() {
@@ -358,14 +407,14 @@ function findBestMove(card) {
     // Check foundation first
     for (let i = 0; i < 4; i++) {
         if (isValidFoundationMove(card, i)) {
-            return { type: 'foundation', index: i };
+            return {type: 'foundation', index: i};
         }
     }
 
     // Check tableau
     for (let i = 0; i < 7; i++) {
         if (isValidTableauMove(card, i)) {
-            return { type: 'tableau', index: i };
+            return {type: 'tableau', index: i};
         }
     }
 
@@ -373,23 +422,13 @@ function findBestMove(card) {
 }
 
 function handleCardClick(e) {
+    e.preventDefault();
     const cardElement = e.target.closest('.card');
     if (!cardElement) return;
 
     const pile = cardElement.closest('.pile');
-    const wasteElement = document.getElementById('waste');
 
-    if (wasteElement.contains(cardElement) && waste.length > 0) {
-        const wasteCard = waste[waste.length - 1];
-        const bestMove = findBestMove(wasteCard);
-        if (bestMove) {
-            if (bestMove.type === 'foundation') {
-                moveToFoundation(wasteCard, bestMove.index);
-            } else if (bestMove.type === 'tableau') {
-                moveToTableau({ cards: [wasteCard], sourceIndex: -1 }, bestMove.index);
-            }
-        }
-    } else if (pile && pile.classList.contains('tableau-pile')) {
+    if (pile && pile.classList.contains('tableau-pile')) {
         const sourceIndex = parseInt(pile.dataset.index);
         const allCards = Array.from(pile.querySelectorAll('.card'));
         const clickedCardIndex = allCards.indexOf(cardElement);
@@ -401,12 +440,13 @@ function handleCardClick(e) {
                 if (bestMove.type === 'foundation' && cardsToMove.length === 1) {
                     moveToFoundation(cardsToMove[0], bestMove.index);
                 } else if (bestMove.type === 'tableau') {
-                    moveToTableau({ cards: cardsToMove, sourceIndex: sourceIndex }, bestMove.index);
+                    moveToTableau({cards: cardsToMove, sourceIndex: sourceIndex}, bestMove.index);
                 }
             }
         }
     }
 }
+
 
 function initGame() {
     deck = [];
