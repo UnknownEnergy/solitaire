@@ -5,9 +5,9 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.chatworm.twa",
+      "package_name": "io.github.unknownenergy.twa",
       "sha256_cert_fingerprints": [
-        "41:F9:D1:30:66:0C:34:8E:55:29:9B:68:C3:73:B4:EC:4D:C0:A0:F0:35:8C:96:4F:EC:B1:F9:95:A0:4F:29:C3"
+        "2A:E8:6C:00:72:38:B4:67:14:8D:08:DF:FC:CF:EF:AF:C1:F8:C4:61:08:AB:EB:C3:B7:69:B2:A5:C3:D7:52:09"
       ]
     }
   }
