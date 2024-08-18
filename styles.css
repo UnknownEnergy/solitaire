@@ -58,6 +58,20 @@ body {
     width: 100%;
     max-width: 600px;
     margin-bottom: 20px;
+    flex-direction: row;
+}
+
+.top-area.right-handed {
+    flex-direction: row-reverse;
+}
+
+.deck-and-waste {
+    display: flex;
+    flex-direction: row;
+}
+
+.deck-and-waste.right-handed {
+    flex-direction: row-reverse;
 }
 
 #deck {
@@ -79,15 +93,15 @@ body {
 
 #redo-button {
     position: absolute;
-    top: 50%;
+    top: 80%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(255, 255, 255, 0.8);
     border: none;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 20px;
+    width: 45px;
+    height: 45px;
+    font-size: 25px;
     cursor: pointer;
     display: none; /* Hide by default */
     justify-content: center;
@@ -215,11 +229,23 @@ body {
     margin-left: 10px;
 }
 
+.card-symbol {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+}
+
 @media (max-width: 600px) {
     .card {
         width: 40px;
         height: 60px;
         font-size: 14px;
+    }
+
+    .card-symbol {
+        font-size: 24px;
     }
 
     #deck, #waste {
@@ -232,14 +258,8 @@ body {
         height: 62px;
     }
 
-    #redo-button {
-        width: 24px;
-        height: 24px;
-        font-size: 16px;
-    }
-
     .tableau-pile {
-        height: 200px;
+        height: 300px;
     }
 
     .card-value, .card-suit {

@@ -33,13 +33,14 @@ function dealCards() {
 function renderCard(card, faceUp = true) {
     const cardElement = document.createElement('div');
     cardElement.classList.add('card');
-    cardElement.draggable = faceUp; // Only set draggable for face-up cards
+    cardElement.draggable = faceUp;
     cardElement.dataset.suit = card.suit;
     cardElement.dataset.value = card.value;
     if (faceUp) {
         cardElement.innerHTML = `
             <span class="card-value">${card.value}</span>
             <span class="card-suit">${card.suit}</span>
+            <span class="card-symbol">${card.suit}</span>
         `;
         cardElement.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
     } else {
@@ -365,33 +366,45 @@ function updateDrawOption(e) {
     saveSettings();
 }
 
+function updateHandPreference(e) {
+    handPreference = e.target.value;
+    applyHandPreference();
+    saveSettings();
+}
+
+function applyHandPreference() {
+    const topArea = document.querySelector('.top-area');
+    const deckAndWaste = document.querySelector('.deck-and-waste');
+
+    if (topArea) {
+        if (handPreference === 'right') {
+            topArea.classList.add('right-handed');
+        } else {
+            topArea.classList.remove('right-handed');
+        }
+    }
+
+    if (deckAndWaste) {
+        if (handPreference === 'right') {
+            deckAndWaste.classList.add('right-handed');
+        } else {
+            deckAndWaste.classList.remove('right-handed');
+        }
+    }
+}
+
 function saveSettings() {
     const settings = {
         drawCount: drawCount,
-        soundEnabled: soundEnabled
+        soundEnabled: soundEnabled,
+        handPreference: handPreference
     };
     localStorage.setItem('solitaireSettings', JSON.stringify(settings));
 }
 
 let drawCount = 1;
 let soundEnabled = true;
-
-loadSettings();
-
-
-function loadSettings() {
-    const savedSettings = localStorage.getItem('solitaireSettings');
-    if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        drawCount = settings.drawCount || 1;
-        // Update UI
-        const drawOptionSelect = document.getElementById('draw-option');
-        if (drawOptionSelect) {
-            drawOptionSelect.value = drawCount;
-        }
-        soundEnabled = settings.soundEnabled !== undefined ? settings.soundEnabled : true;
-    }
-}
+let handPreference = 'right';
 
 const settingsButton = document.getElementById('settings-button');
 const settingsMenu = document.getElementById('settings-menu');
@@ -399,8 +412,32 @@ const drawOption = document.getElementById('draw-option');
 
 const soundToggle = document.getElementById('sound-toggle');
 
-// Add this to your existing event listeners
 soundToggle.addEventListener('change', updateSoundSetting);
+
+loadSettings();
+
+function loadSettings() {
+    const savedSettings = localStorage.getItem('solitaireSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        drawCount = settings.drawCount || 1;
+        soundEnabled = settings.soundEnabled !== undefined ? settings.soundEnabled : true;
+        handPreference = settings.handPreference || 'right';
+
+        // Update UI
+        const drawOptionSelect = document.getElementById('draw-option');
+        if (drawOptionSelect) {
+            drawOptionSelect.value = drawCount;
+        }
+        const handPreferenceSelect = document.getElementById('hand-preference');
+        if (handPreferenceSelect) {
+            handPreferenceSelect.value = handPreference;
+        }
+        soundToggle.checked = soundEnabled;
+        applyHandPreference();
+    }
+}
+
 
 function updateSoundSetting(e) {
     soundEnabled = e.target.checked;
@@ -423,6 +460,8 @@ function initGame() {
 
     settingsButton.addEventListener('click', toggleSettingsMenu);
     drawOption.addEventListener('change', updateDrawOption);
+    soundToggle.addEventListener('change', updateSoundSetting);
+    document.getElementById('hand-preference').addEventListener('change', updateHandPreference);
 
     createDeck();
     dealCards();
@@ -430,9 +469,7 @@ function initGame() {
     hideRedoButton();
 
     soundToggle.checked = soundEnabled;
-    settingsButton.addEventListener('click', toggleSettingsMenu);
-    drawOption.addEventListener('change', updateDrawOption);
-    soundToggle.addEventListener('change', updateSoundSetting);
+    applyHandPreference();
 }
 
 initGame();
