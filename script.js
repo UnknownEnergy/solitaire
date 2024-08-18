@@ -48,6 +48,20 @@ function renderCard(card, faceUp = true) {
     return cardElement;
 }
 
+function flipCard(cardElement) {
+    cardElement.classList.add('flip');
+    playSound('card-flip-sound');
+    setTimeout(() => {
+        cardElement.classList.remove('flip');
+    }, 300);
+}
+
+function playSound(soundId) {
+    const sound = document.getElementById(soundId);
+    sound.currentTime = 0;
+    sound.play();
+}
+
 
 function renderGame() {
     const deckElement = document.getElementById('deck');
@@ -118,15 +132,48 @@ function addDragAndDropListeners() {
 
     cards.forEach(card => {
         card.addEventListener('dragstart', dragStart);
+        card.addEventListener('touchstart', touchStart);
         card.addEventListener('click', handleCardClick);
     });
 
     piles.forEach(pile => {
         pile.addEventListener('dragover', dragOver);
         pile.addEventListener('drop', drop);
+        pile.addEventListener('touchend', touchEnd);
     });
 }
 
+function touchStart(e) {
+    const cardElement = e.target.closest('.card');
+    if (cardElement) {
+        e.preventDefault();
+        cardElement.classList.add('dragging');
+    }
+}
+
+function touchEnd(e) {
+    e.preventDefault();
+    const cardElement = document.querySelector('.card.dragging');
+    if (cardElement) {
+        const targetPile = e.target.closest('.pile');
+        if (targetPile) {
+            const cardData = {
+                cards: [{
+                    suit: cardElement.dataset.suit,
+                    value: cardElement.dataset.value
+                }],
+                sourceIndex: cardElement.closest('.pile')?.dataset.index || -1
+            };
+
+            if (targetPile.classList.contains('foundation-pile')) {
+                moveToFoundation(cardData.cards[0], parseInt(targetPile.dataset.index));
+            } else if (targetPile.classList.contains('tableau-pile')) {
+                moveToTableau(cardData, parseInt(targetPile.dataset.index));
+            }
+        }
+        cardElement.classList.remove('dragging');
+    }
+}
 
 function dragStart(e) {
     const cardElement = e.target.closest('.card');
@@ -172,6 +219,7 @@ function moveToFoundation(cardData, foundationIndex) {
     if (sourceCard && isValidFoundationMove(sourceCard, foundationIndex)) {
         removeCardFromSource(sourceCard);
         foundation[foundationIndex].push(sourceCard);
+        playSound('card-place-sound');
         renderGame();
     }
 }
@@ -198,6 +246,8 @@ function moveToTableau(cardData, tableauIndex) {
 
         // Add cards to the target tableau pile
         tableau[tableauIndex].push(...sourceCards);
+        renderGame();
+        playSound('card-place-sound');
         renderGame();
     }
 }
@@ -259,7 +309,9 @@ function isValidTableauMove(card, tableauIndex) {
 
 function drawCard() {
     if (deck.length > 0) {
-        waste.push(deck.pop());
+        const card = deck.pop();
+        waste.push(card);
+        flipCard(renderCard(card));
         renderGame();
     }
 
@@ -267,7 +319,6 @@ function drawCard() {
         showRedoButton();
     }
 }
-
 
 function showRedoButton() {
     const redoButton = document.getElementById('redo-button');

@@ -7,13 +7,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="deck"></div>
-        <div id="waste"></div>
+<div id="game-container">
+    <div class="top-area">
+        <div id="deck-waste">
+            <div id="deck"></div>
+            <div id="waste"></div>
+        </div>
         <div id="foundation"></div>
-        <div id="tableau"></div>
     </div>
-   <button id="redo-button">Redo Deck</button>
-    <script src="script.js"></script>
+    <div id="tableau"></div>
+</div>
+<button id="redo-button">Redo Deck</button>
+<audio id="card-flip-sound" src="card-flip.mp3"></audio>
+<audio id="card-place-sound" src="card-place.mp3"></audio>
+<script src="script.js"></script>
 </body>
+
 </html>
