@@ -133,14 +133,8 @@ function addDragAndDropListeners() {
     const wasteElement = document.getElementById('waste');
 
     cards.forEach(card => {
-        card.addEventListener('dragstart', dragStart);
-        card.addEventListener('touchstart', touchStart, {passive: false});
         card.addEventListener('click', handleCardClick);
-    });
-
-    piles.forEach(pile => {
-        pile.addEventListener('dragover', dragOver);
-        pile.addEventListener('drop', drop);
+        deckElement.addEventListener('touchend', handleCardClick);
     });
 
     deckElement.addEventListener('click', handleDeckClick);
@@ -148,9 +142,6 @@ function addDragAndDropListeners() {
 
     wasteElement.addEventListener('click', handleWasteClick);
     wasteElement.addEventListener('touchend', handleWasteClick);
-
-    document.addEventListener('touchmove', touchMove, {passive: false});
-    document.addEventListener('touchend', touchEnd);
 }
 
 function handleDeckClick(e) {
@@ -170,83 +161,6 @@ function handleWasteClick(e) {
                 moveToTableau({cards: [wasteCard], sourceIndex: -1}, bestMove.index);
             }
         }
-    }
-}
-
-
-function touchStart(e) {
-    e.preventDefault();
-    const cardElement = e.target.closest('.card');
-    if (cardElement) {
-        cardElement.classList.add('dragging');
-        cardElement.dataset.touchStartX = e.touches[0].clientX;
-        cardElement.dataset.touchStartY = e.touches[0].clientY;
-    }
-}
-
-function touchMove(e) {
-    e.preventDefault();
-    const cardElement = document.querySelector('.card.dragging');
-    if (cardElement) {
-        const touchX = e.touches[0].clientX;
-        const touchY = e.touches[0].clientY;
-        const deltaX = touchX - cardElement.dataset.touchStartX;
-        const deltaY = touchY - cardElement.dataset.touchStartY;
-
-        cardElement.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    }
-}
-
-function touchEnd(e) {
-    e.preventDefault();
-    const cardElement = document.querySelector('.card.dragging');
-    if (cardElement) {
-        cardElement.style.transform = '';
-        cardElement.classList.remove('dragging');
-
-        const touch = e.changedTouches[0];
-        const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-        const targetPile = targetElement.closest('.pile');
-
-        if (targetPile) {
-            const cardData = getCardData(cardElement);
-
-            if (targetPile.classList.contains('foundation-pile')) {
-                moveToFoundation(cardData.cards[0], parseInt(targetPile.dataset.index));
-            } else if (targetPile.classList.contains('tableau-pile')) {
-                moveToTableau(cardData, parseInt(targetPile.dataset.index));
-            }
-        }
-    }
-}
-
-
-function dragStart(e) {
-    const cardElement = e.target.closest('.card');
-    if (cardElement) {
-        const cardData = getCardData(cardElement);
-        e.dataTransfer.setData('text/plain', JSON.stringify(cardData));
-    }
-}
-
-function dragOver(e) {
-    e.preventDefault();
-}
-
-function drop(e) {
-    e.preventDefault();
-    const targetPile = e.target.closest('.pile');
-    if (!targetPile) return;
-
-    try {
-        const cardData = JSON.parse(e.dataTransfer.getData('text/plain'));
-        if (targetPile.classList.contains('foundation-pile')) {
-            moveToFoundation(cardData.cards[0], parseInt(targetPile.dataset.index));
-        } else if (targetPile.classList.contains('tableau-pile')) {
-            moveToTableau(cardData, parseInt(targetPile.dataset.index));
-        }
-    } catch (error) {
-        console.error("Error parsing drag data:", error);
     }
 }
 
@@ -446,7 +360,6 @@ function handleCardClick(e) {
         }
     }
 }
-
 
 function initGame() {
     deck = [];
