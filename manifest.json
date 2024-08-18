@@ -1,0 +1,12 @@
+{
+  "background_color": "#00620a",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Solitaire",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Solitaire",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "description": "Simple Solitaire Game"
+}
