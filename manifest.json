@@ -6,7 +6,7 @@
   "orientation": "any",
   "scope": "/",
   "short_name": "Solitaire",
-  "start_url": "/",
+  "start_url": "/solitaire",
   "theme_color": "#ffffff",
   "description": "Simple Solitaire Game",
   "icons": [
