@@ -29,6 +29,12 @@ body {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease-in-out;
     backface-visibility: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: none;
+    will-change: transform;
 }
 
 .card.back {
