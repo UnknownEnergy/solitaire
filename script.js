@@ -1,17 +1,19 @@
 const suits = ['♠', '♥', '♦', '♣'];
 const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+let deck, waste, foundation, tableau;
+let drawCount = 1, soundEnabled = true, handPreference = 'right';
 
-let deck = [];
-let waste = [];
-let foundation = [[], [], [], []];
-let tableau = [[], [], [], [], [], [], []];
+function initGame() {
+    [deck, waste, foundation, tableau] = [[], [], [[], [], [], []], [[], [], [], [], [], [], []]];
+    loadSettings();
+    createDeck();
+    dealCards();
+    renderGame();
+    addEventListeners();
+}
 
 function createDeck() {
-    for (let suit of suits) {
-        for (let value of values) {
-            deck.push({suit, value, faceUp: false});
-        }
-    }
+    deck = suits.flatMap(suit => values.map(value => ({suit, value, faceUp: false})));
     shuffleDeck();
 }
 
@@ -27,119 +29,131 @@ function dealCards() {
         for (let j = i; j < 7; j++) {
             tableau[j].push(deck.pop());
         }
+        tableau[i][tableau[i].length - 1].faceUp = true;
+    }
+}
+
+function renderGame() {
+    ['deck', 'waste', 'foundation', 'tableau'].forEach(renderArea);
+    addDragAndDropListeners();
+    deck.length === 0 && waste.length > 0 ? showRedoButton() : hideRedoButton();
+    checkWin() && displayWin();
+}
+
+function renderArea(area) {
+    const element = document.getElementById(area);
+    element.innerHTML = '';
+    if (area === 'deck') {
+        deck.length > 0 && element.appendChild(renderCard(deck[deck.length - 1], false));
+    } else if (area === 'waste') {
+        waste.length > 0 && element.appendChild(renderCard(waste[waste.length - 1]));
+    } else if (area === 'foundation' || area === 'tableau') {
+        const piles = area === 'foundation' ? foundation : tableau;
+        piles.forEach((pile, i) => {
+            const pileElement = document.createElement('div');
+            pileElement.classList.add('pile', `${area}-pile`);
+            pileElement.dataset.index = i;
+            pile.forEach((card, j) => {
+                const cardElement = renderCard(card, card.faceUp);
+                if (area === 'tableau') {
+                    cardElement.style.top = `${j * 20}px`;
+                } else {
+                    // For foundation, don't add vertical offset
+                    cardElement.style.top = '0';
+                }
+                pileElement.appendChild(cardElement);
+            });
+            element.appendChild(pileElement);
+        });
     }
 }
 
 function renderCard(card, faceUp = true) {
     const cardElement = document.createElement('div');
-    cardElement.classList.add('card');
+    cardElement.classList.add('card', faceUp ? (card.suit === '♥' || card.suit === '♦' ? 'red' : 'black') : 'back');
     cardElement.draggable = faceUp;
     cardElement.dataset.suit = card.suit;
     cardElement.dataset.value = card.value;
-
     if (faceUp) {
         cardElement.innerHTML = `
             <span class="card-value">${card.value}</span>
             <span class="card-suit">${card.suit}</span>
             <span class="card-symbol">${card.suit}</span>
         `;
-        cardElement.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
-    } else {
-        cardElement.classList.add('back');
     }
-
     return cardElement;
 }
 
-
-function renderGame() {
-    const deckElement = document.getElementById('deck');
-    const wasteElement = document.getElementById('waste');
-    const foundationElement = document.getElementById('foundation');
-    const tableauElement = document.getElementById('tableau');
-
-    deckElement.innerHTML = '';
-    wasteElement.innerHTML = '';
-    foundationElement.innerHTML = '';
-    tableauElement.innerHTML = '';
-
-    // Render deck
-    if (deck.length > 0) {
-        deckElement.appendChild(renderCard(deck[deck.length - 1], false));
-    }
-
-    // Render waste
-    if (waste.length > 0) {
-        wasteElement.appendChild(renderCard(waste[waste.length - 1]));
-    }
-
-    // Render foundation
-    for (let i = 0; i < 4; i++) {
-        const pile = document.createElement('div');
-        pile.classList.add('pile', 'foundation-pile');
-        pile.dataset.index = i;
-        if (foundation[i].length > 0) {
-            pile.appendChild(renderCard(foundation[i][foundation[i].length - 1]));
-        }
-        foundationElement.appendChild(pile);
-    }
-
-    // Render tableau
-    for (let i = 0; i < 7; i++) {
-        const pile = document.createElement('div');
-        pile.classList.add('pile', 'tableau-pile');
-        pile.dataset.index = i;
-        for (let j = 0; j < tableau[i].length; j++) {
-            const card = tableau[i][j];
-            const faceUp = j === tableau[i].length - 1 || card.faceUp;
-            const cardElement = renderCard(card, faceUp);
-            cardElement.style.top = `${j * 20}px`; // Stack cards with 20px offset
-            pile.appendChild(cardElement);
-            if (faceUp) {
-                card.faceUp = true; // Mark the card as face up for future renders
-            }
-        }
-        tableauElement.appendChild(pile);
-    }
-
-    addDragAndDropListeners();
-
-    if (deck.length === 0 && waste.length > 0) {
-        showRedoButton();
-    } else {
-        hideRedoButton();
-    }
-
-    if (checkWin()) {
-        displayWin();
-    }
+function addEventListeners() {
+    document.getElementById('deck').addEventListener('click', drawCard);
+    document.getElementById('redo-button').addEventListener('click', redoDeck);
+    document.getElementById('settings-button').addEventListener('click', toggleSettingsMenu);
+    document.getElementById('draw-option').addEventListener('change', updateDrawOption);
+    document.getElementById('sound-toggle').addEventListener('change', updateSoundSetting);
+    document.getElementById('hand-preference').addEventListener('change', updateHandPreference);
 }
 
 function addDragAndDropListeners() {
-    const cards = document.querySelectorAll('.card');
-    const piles = document.querySelectorAll('.pile');
-    const deckElement = document.getElementById('deck');
-    const wasteElement = document.getElementById('waste');
-
-    cards.forEach(card => {
+    document.querySelectorAll('.card').forEach(card => {
         card.addEventListener('click', handleCardClick);
-        deckElement.addEventListener('touchend', handleCardClick);
     });
-
-    deckElement.addEventListener('click', handleDeckClick);
-    deckElement.addEventListener('touchend', handleDeckClick);
-
-    wasteElement.addEventListener('click', handleWasteClick);
-    wasteElement.addEventListener('touchend', handleWasteClick);
+    document.getElementById('waste').addEventListener('click', handleWasteCardClick);
+    document.getElementById('foundation').addEventListener('click', handleFoundationCardClick);
 }
 
-function handleDeckClick(e) {
-    e.preventDefault();
-    drawCard();
+function drawCard() {
+    if (deck.length > 0) {
+        const cardsToMove = Math.min(drawCount, deck.length);
+        for (let i = 0; i < cardsToMove; i++) {
+            const card = deck.pop();
+            card.faceUp = true;
+            waste.push(card);
+            i === cardsToMove - 1 && flipCard(renderCard(card));
+        }
+        renderGame();
+    }
+    deck.length === 0 && showRedoButton();
 }
 
-function handleWasteClick(e) {
+function handleCardClick(e) {
     e.preventDefault();
+    const cardElement = e.target.closest('.card');
+    if (!cardElement) return;
+
+    const pile = cardElement.closest('.pile');
+    if (pile) {
+        if (pile.classList.contains('tableau-pile')) {
+            handleTableauCardClick(cardElement, pile);
+        } else if (pile.id === 'waste') {
+            handleWasteCardClick();
+        } else if (pile.classList.contains('foundation-pile')) {
+            handleFoundationCardClick(e);
+        }
+    }
+}
+
+function handleTableauCardClick(cardElement, pile) {
+    const sourceIndex = parseInt(pile.dataset.index);
+    const allCards = Array.from(pile.querySelectorAll('.card'));
+    const clickedCardIndex = allCards.indexOf(cardElement);
+
+    if (clickedCardIndex === -1 || !tableau[sourceIndex][clickedCardIndex].faceUp) return;
+
+    const cardsToMove = tableau[sourceIndex].slice(clickedCardIndex);
+
+    if (cardsToMove.length > 0) {
+        const bestMove = findBestMove(cardsToMove[0]);
+        if (bestMove) {
+            if (bestMove.type === 'foundation' && cardsToMove.length === 1) {
+                moveToFoundation(cardsToMove[0], bestMove.index);
+            } else if (bestMove.type === 'tableau') {
+                moveToTableau({cards: cardsToMove, sourceIndex}, bestMove.index);
+            }
+        }
+    }
+}
+
+function handleWasteCardClick() {
     if (waste.length > 0) {
         const wasteCard = waste[waste.length - 1];
         const bestMove = findBestMove(wasteCard);
@@ -153,37 +167,68 @@ function handleWasteClick(e) {
     }
 }
 
-function moveToFoundation(cardData, foundationIndex) {
-    const sourceCard = findCard(cardData);
-    if (sourceCard && isValidFoundationMove(sourceCard, foundationIndex)) {
-        removeCardFromSource(sourceCard);
-        foundation[foundationIndex].push(sourceCard);
+function handleFoundationCardClick(e) {
+    const cardElement = e.target.closest('.card');
+    if (!cardElement) return;
+
+    const pile = cardElement.closest('.pile');
+    if (pile && pile.classList.contains('foundation-pile')) {
+        const foundationIndex = parseInt(pile.dataset.index);
+        const foundationPile = foundation[foundationIndex];
+        if (foundationPile.length > 0) {
+            const foundationCard = foundationPile[foundationPile.length - 1];
+            const bestMove = findBestTableauMove(foundationCard);
+            if (bestMove) {
+                moveFromFoundationToTableau(foundationCard, foundationIndex, bestMove.index);
+            }
+        }
+    }
+}
+
+function findBestTableauMove(card) {
+    for (let i = 0; i < 7; i++) {
+        if (isValidTableauMove(card, i)) return {type: 'tableau', index: i};
+    }
+    return null;
+}
+
+function moveFromFoundationToTableau(card, foundationIndex, tableauIndex) {
+    if (isValidTableauMove(card, tableauIndex)) {
+        foundation[foundationIndex].pop();
+        tableau[tableauIndex].push(card);
+        playSound('card-place-sound');
+        renderGame();
+    }
+}
+
+function moveToFoundation(card, foundationIndex) {
+    if (isValidFoundationMove(card, foundationIndex)) {
+        const sourceIndex = removeCardFromSource(card);
+        foundation[foundationIndex].push(card);
+        // Flip the card underneath if it exists and is face-down
+        if (sourceIndex >= 0 && tableau[sourceIndex].length > 0 && !tableau[sourceIndex][tableau[sourceIndex].length - 1].faceUp) {
+            tableau[sourceIndex][tableau[sourceIndex].length - 1].faceUp = true;
+        }
         playSound('card-place-sound');
         renderGame();
     }
 }
 
 function moveToTableau(cardData, tableauIndex) {
-    const sourceCards = cardData.cards.map(findCard);
-    const sourceIndex = parseInt(cardData.sourceIndex);
+    const sourceCards = cardData.sourceIndex >= 0 ? cardData.cards : cardData.cards.map(findCard);
+    const sourceIndex = cardData.sourceIndex;
 
     if (sourceCards.length > 0 && isValidTableauMove(sourceCards[0], tableauIndex)) {
-        // Remove cards from the source
         if (sourceIndex >= 0) {
-            // Remove cards from tableau
-            const startIndex = tableau[sourceIndex].indexOf(sourceCards[0]);
-            if (startIndex !== -1) {
-                tableau[sourceIndex].splice(startIndex);
+            tableau[sourceIndex].splice(tableau[sourceIndex].indexOf(sourceCards[0]));
+            // Flip the card underneath if it exists and is face-down
+            if (tableau[sourceIndex].length > 0 && !tableau[sourceIndex][tableau[sourceIndex].length - 1].faceUp) {
+                tableau[sourceIndex][tableau[sourceIndex].length - 1].faceUp = true;
             }
         } else {
             // Remove card from waste
-            const wasteIndex = waste.findIndex(c => c.suit === sourceCards[0].suit && c.value === sourceCards[0].value);
-            if (wasteIndex !== -1) {
-                waste.splice(wasteIndex, 1);
-            }
+            waste.pop();
         }
-
-        // Add cards to the target tableau pile
         tableau[tableauIndex].push(...sourceCards);
         playSound('card-place-sound');
         renderGame();
@@ -191,79 +236,60 @@ function moveToTableau(cardData, tableauIndex) {
 }
 
 function removeCardFromSource(card) {
-    // Check tableau
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < tableau.length; i++) {
         const index = tableau[i].findIndex(c => c.suit === card.suit && c.value === card.value);
         if (index !== -1) {
             tableau[i].splice(index, 1);
-            return;
+            return i;
         }
     }
-    // Check waste
     const wasteIndex = waste.findIndex(c => c.suit === card.suit && c.value === card.value);
     if (wasteIndex !== -1) {
         waste.splice(wasteIndex, 1);
     }
+    return -1;
 }
 
 function findCard(cardData) {
-    // Check tableau
-    for (let i = 0; i < 7; i++) {
-        const card = tableau[i].find(c => c.suit === cardData.suit && c.value === cardData.value);
+    for (let pile of [...tableau, waste]) {
+        const card = pile.find(c => c.suit === cardData.suit && c.value === cardData.value);
         if (card) return card;
     }
-    // Check waste
-    const wasteCard = waste.find(c => c.suit === cardData.suit && c.value === cardData.value);
-    if (wasteCard) return wasteCard;
-
-    // If not found, return null or throw an error
     return null;
 }
 
 function isValidFoundationMove(card, foundationIndex) {
     const foundationPile = foundation[foundationIndex];
-    if (foundationPile.length === 0) {
-        return card.value === 'A';
-    }
-    const topCard = foundationPile[foundationPile.length - 1];
-    return card.suit === topCard.suit && values.indexOf(card.value) === values.indexOf(topCard.value) + 1;
+    return foundationPile.length === 0 ? card.value === 'A' :
+        card.suit === foundationPile[foundationPile.length - 1].suit &&
+        values.indexOf(card.value) === values.indexOf(foundationPile[foundationPile.length - 1].value) + 1;
 }
 
 function isValidTableauMove(card, tableauIndex) {
     const tableauPile = tableau[tableauIndex];
     if (tableauPile.length === 0) {
         return card.value === 'K';
+    } else {
+        const topCard = tableauPile[tableauPile.length - 1];
+        return (card.suit === '♠' || card.suit === '♣') !== (topCard.suit === '♠' || topCard.suit === '♣') &&
+            values.indexOf(card.value) === values.indexOf(topCard.value) - 1;
     }
-    const topCard = tableauPile[tableauPile.length - 1];
-    return (card.suit === '♠' || card.suit === '♣') !== (topCard.suit === '♠' || topCard.suit === '♣') &&
-        values.indexOf(card.value) === values.indexOf(topCard.value) - 1;
 }
 
-function drawCard() {
-    if (deck.length > 0) {
-        const cardsToMove = Math.min(drawCount, deck.length);
-        for (let i = 0; i < cardsToMove; i++) {
-            const card = deck.pop();
-            card.faceUp = true;
-            waste.push(card);
-            if (i === cardsToMove - 1) {
-                flipCard(renderCard(card));
-            }
-        }
-        renderGame();
+function findBestMove(card) {
+    for (let i = 0; i < 4; i++) {
+        if (isValidFoundationMove(card, i)) return {type: 'foundation', index: i};
     }
-
-    if (deck.length === 0) {
-        showRedoButton();
+    for (let i = 0; i < 7; i++) {
+        if (isValidTableauMove(card, i)) return {type: 'tableau', index: i};
     }
+    return null;
 }
 
 function flipCard(cardElement) {
     cardElement.classList.add('flip');
     playSound('card-flip-sound');
-    setTimeout(() => {
-        cardElement.classList.remove('flip');
-    }, 300);
+    setTimeout(() => cardElement.classList.remove('flip'), 300);
 }
 
 function playSound(soundId) {
@@ -275,13 +301,11 @@ function playSound(soundId) {
 }
 
 function showRedoButton() {
-    const redoButton = document.getElementById('redo-button');
-    redoButton.style.display = 'flex';
+    document.getElementById('redo-button').style.display = 'flex';
 }
 
 function hideRedoButton() {
-    const redoButton = document.getElementById('redo-button');
-    redoButton.style.display = 'none';
+    document.getElementById('redo-button').style.display = 'none';
 }
 
 function redoDeck() {
@@ -309,58 +333,8 @@ function displayWin() {
     document.body.appendChild(newGameButton);
 }
 
-function findBestMove(card) {
-    // Check foundation first
-    for (let i = 0; i < 4; i++) {
-        if (isValidFoundationMove(card, i)) {
-            return {type: 'foundation', index: i};
-        }
-    }
-
-    // Check tableau
-    for (let i = 0; i < 7; i++) {
-        if (isValidTableauMove(card, i)) {
-            return {type: 'tableau', index: i};
-        }
-    }
-
-    return null;
-}
-
-function handleCardClick(e) {
-    e.preventDefault();
-    const cardElement = e.target.closest('.card');
-    if (!cardElement) return;
-
-    const pile = cardElement.closest('.pile');
-
-    if (pile && pile.classList.contains('tableau-pile')) {
-        const sourceIndex = parseInt(pile.dataset.index);
-        const allCards = Array.from(pile.querySelectorAll('.card'));
-        const clickedCardIndex = allCards.indexOf(cardElement);
-
-        // Check if the clicked card is face-up
-        if (!tableau[sourceIndex][clickedCardIndex].faceUp) {
-            return; // Exit the function if the card is face-down
-        }
-
-        const cardsToMove = tableau[sourceIndex].slice(clickedCardIndex);
-
-        if (cardsToMove.length > 0) {
-            const bestMove = findBestMove(cardsToMove[0]);
-            if (bestMove) {
-                if (bestMove.type === 'foundation' && cardsToMove.length === 1) {
-                    moveToFoundation(cardsToMove[0], bestMove.index);
-                } else if (bestMove.type === 'tableau') {
-                    moveToTableau({cards: cardsToMove, sourceIndex: sourceIndex}, bestMove.index);
-                }
-            }
-        }
-    }
-}
-
 function toggleSettingsMenu() {
-    settingsMenu.classList.toggle('hidden');
+    document.getElementById('settings-menu').classList.toggle('hidden');
 }
 
 function updateDrawOption(e) {
@@ -377,107 +351,29 @@ function updateHandPreference(e) {
 function applyHandPreference() {
     const topArea = document.querySelector('.top-area');
     const deckAndWaste = document.querySelector('.deck-and-waste');
-
-    if (topArea) {
-        if (handPreference === 'right') {
-            topArea.classList.add('right-handed');
-        } else {
-            topArea.classList.remove('right-handed');
-        }
-    }
-
-    if (deckAndWaste) {
-        if (handPreference === 'right') {
-            deckAndWaste.classList.add('right-handed');
-        } else {
-            deckAndWaste.classList.remove('right-handed');
-        }
-    }
+    [topArea, deckAndWaste].forEach(el => {
+        if (el) el.classList.toggle('right-handed', handPreference === 'right');
+    });
 }
 
 function saveSettings() {
-    const settings = {
-        drawCount: drawCount,
-        soundEnabled: soundEnabled,
-        handPreference: handPreference
-    };
-    localStorage.setItem('solitaireSettings', JSON.stringify(settings));
+    localStorage.setItem('solitaireSettings', JSON.stringify({drawCount, soundEnabled, handPreference}));
 }
 
-let drawCount = 1;
-let soundEnabled = true;
-let handPreference = 'right';
-
-const settingsButton = document.getElementById('settings-button');
-const settingsMenu = document.getElementById('settings-menu');
-const drawOption = document.getElementById('draw-option');
-
-const soundToggle = document.getElementById('sound-toggle');
-
-soundToggle.addEventListener('change', updateSoundSetting);
-
-loadSettings();
-
 function loadSettings() {
-    const savedSettings = localStorage.getItem('solitaireSettings');
+    const savedSettings = JSON.parse(localStorage.getItem('solitaireSettings'));
     if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        drawCount = settings.drawCount || 1;
-        soundEnabled = settings.soundEnabled !== undefined ? settings.soundEnabled : true;
-        handPreference = settings.handPreference || 'right';
-
-        // Update UI
-        const drawOptionSelect = document.getElementById('draw-option');
-        if (drawOptionSelect) {
-            drawOptionSelect.value = drawCount;
-        }
-        const handPreferenceSelect = document.getElementById('hand-preference');
-        if (handPreferenceSelect) {
-            handPreferenceSelect.value = handPreference;
-        }
-        soundToggle.checked = soundEnabled;
+        ({drawCount = 1, soundEnabled = true, handPreference = 'right'} = savedSettings);
+        document.getElementById('draw-option').value = drawCount;
+        document.getElementById('hand-preference').value = handPreference;
+        document.getElementById('sound-toggle').checked = soundEnabled;
         applyHandPreference();
     }
 }
-
 
 function updateSoundSetting(e) {
     soundEnabled = e.target.checked;
     saveSettings();
 }
 
-function initGame() {
-    deck = [];
-    waste = [];
-    foundation = [[], [], [], []];
-    tableau = [[], [], [], [], [], [], []];
-
-    const winMessage = document.getElementById('win-message');
-    if (winMessage) winMessage.remove();
-
-    const newGameButton = document.getElementById('new-game-button');
-    if (newGameButton) newGameButton.remove();
-
-    loadSettings();
-
-    settingsButton.addEventListener('click', toggleSettingsMenu);
-    drawOption.addEventListener('change', updateDrawOption);
-    soundToggle.addEventListener('change', updateSoundSetting);
-    document.getElementById('hand-preference').addEventListener('change', updateHandPreference);
-
-    createDeck();
-    dealCards();
-    renderGame();
-    hideRedoButton();
-
-    soundToggle.checked = soundEnabled;
-    applyHandPreference();
-}
-
 initGame();
-
-// Add click event listener for drawing cards
-document.getElementById('deck').addEventListener('click', drawCard);
-
-// Add click event listener for redo button
-document.getElementById('redo-button').addEventListener('click', redoDeck);
