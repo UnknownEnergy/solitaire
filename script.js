@@ -36,6 +36,7 @@ function renderCard(card, faceUp = true) {
     cardElement.draggable = faceUp;
     cardElement.dataset.suit = card.suit;
     cardElement.dataset.value = card.value;
+
     if (faceUp) {
         cardElement.innerHTML = `
             <span class="card-value">${card.value}</span>
@@ -44,8 +45,9 @@ function renderCard(card, faceUp = true) {
         `;
         cardElement.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
     } else {
-        cardElement.textContent = '🂠';
+        cardElement.classList.add('back');
     }
+
     return cardElement;
 }
 
