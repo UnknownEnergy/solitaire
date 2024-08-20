@@ -531,6 +531,7 @@ function displayWin() {
     newGameButton.id = 'new-game-button';
     newGameButton.textContent = 'Start New Game';
     newGameButton.addEventListener('click', () => {
+        document.body.removeChild(winMessage);
         document.body.removeChild(newGameButton);
         initGame();
     });
