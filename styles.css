@@ -119,8 +119,8 @@ body {
 
 #redo-button {
     position: absolute;
-    top: 80%;
-    left: 50%;
+    right: 5px;
+    margin-top: 30px;
     transform: translate(-50%, -50%);
     background-color: rgba(255, 255, 255, 0.8);
     border: none;
@@ -129,11 +129,11 @@ body {
     height: 45px;
     font-size: 25px;
     cursor: pointer;
-    display: none; /* Hide by default */
+    display: none;
     justify-content: center;
     align-items: center;
     transition: background-color 0.3s ease;
-    z-index: 10; /* Ensure it's above the cards */
+    z-index: 10;
 }
 
 #redo-button:hover {
@@ -271,6 +271,17 @@ body {
     margin-bottom: 20px;
     font-size: 18px;
     color: white;
+}
+
+#deck-counter {
+    position: absolute;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 12px;
+    z-index: 5;
 }
 
 @media (max-width: 600px) {
