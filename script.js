@@ -4,14 +4,19 @@ let deck, waste, foundation, tableau;
 let drawCount = 1, soundEnabled = true, handPreference = 'right';
 let draggedCard = null;
 let draggedCardElement = null;
-let dragOffset = { x: 0, y: 0 };
+let dragOffset = {x: 0, y: 0};
 let isDragging = false;
 let dragStartTime;
 let originalPosition;
+let movesCount = 0;
+let timerInterval;
+let elapsedTime = 0;
 
 function initGame() {
     [deck, waste, foundation, tableau] = [[], [], [[], [], [], []], [[], [], [], [], [], [], []]];
     loadSettings();
+    resetMovesCounter();
+    resetTimer();
     createDeck();
     dealCards();
     renderGame();
@@ -102,7 +107,7 @@ function addEventListeners() {
 function addDragAndDropListeners() {
     document.querySelectorAll('.card').forEach(card => {
         card.addEventListener('mousedown', handleDragStart);
-        card.addEventListener('touchstart', handleDragStart, { passive: true });
+        card.addEventListener('touchstart', handleDragStart, {passive: true});
     });
     document.getElementById('waste').addEventListener('click', handleWasteCardClick);
     document.getElementById('foundation').addEventListener('click', handleFoundationCardClick);
@@ -152,7 +157,7 @@ function handleDragStart(e) {
         document.addEventListener('mousemove', handleDragMove);
         document.addEventListener('mouseup', handleDragEnd);
     } else if (e.type === 'touchstart') {
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
+        document.addEventListener('touchmove', handleDragMove, {passive: false});
         document.addEventListener('touchend', handleDragEnd);
     }
 }
@@ -215,7 +220,10 @@ function handleDragEnd(e) {
                     } else {
                         cardsToMove = [draggedCard];
                     }
-                    moveToTableau({cards: cardsToMove, sourceIndex: sourceInfo.area === 'tableau' ? sourceInfo.index : -1}, bestMove.index);
+                    moveToTableau({
+                        cards: cardsToMove,
+                        sourceIndex: sourceInfo.area === 'tableau' ? sourceInfo.index : -1
+                    }, bestMove.index);
                     moveMade = true;
                 }
             }
@@ -261,17 +269,17 @@ function findCardSource(card) {
     for (let i = 0; i < tableau.length; i++) {
         const cardIndex = tableau[i].findIndex(c => c.suit === card.suit && c.value === card.value);
         if (cardIndex !== -1) {
-            return { area: 'tableau', index: i, cardIndex: cardIndex };
+            return {area: 'tableau', index: i, cardIndex: cardIndex};
         }
     }
     const wasteIndex = waste.findIndex(c => c.suit === card.suit && c.value === card.value);
     if (wasteIndex !== -1) {
-        return { area: 'waste', index: wasteIndex };
+        return {area: 'waste', index: wasteIndex};
     }
     for (let i = 0; i < foundation.length; i++) {
         const cardIndex = foundation[i].findIndex(c => c.suit === card.suit && c.value === card.value);
         if (cardIndex !== -1) {
-            return { area: 'foundation', index: i, cardIndex: cardIndex };
+            return {area: 'foundation', index: i, cardIndex: cardIndex};
         }
     }
     return null;
@@ -385,6 +393,7 @@ function moveFromFoundationToTableau(card, foundationIndex, tableauIndex) {
         foundation[foundationIndex].pop();
         tableau[tableauIndex].push(card);
         playSound('card-place-sound');
+        incrementMovesCounter();
         renderGame();
     }
 }
@@ -398,6 +407,7 @@ function moveToFoundation(card, foundationIndex) {
             tableau[sourceIndex][tableau[sourceIndex].length - 1].faceUp = true;
         }
         playSound('card-place-sound');
+        incrementMovesCounter();
         renderGame();
     }
 }
@@ -419,6 +429,7 @@ function moveToTableau(cardData, tableauIndex) {
         }
         tableau[tableauIndex].push(...sourceCards);
         playSound('card-place-sound');
+        incrementMovesCounter();
         renderGame();
     }
 }
@@ -476,6 +487,7 @@ function findBestMove(card) {
 
 function flipCard(cardElement) {
     cardElement.classList.add('flip');
+    incrementMovesCounter();
     playSound('card-flip-sound');
     setTimeout(() => cardElement.classList.remove('flip'), 300);
 }
@@ -509,6 +521,7 @@ function checkWin() {
 }
 
 function displayWin() {
+    clearInterval(timerInterval);
     const winMessage = document.createElement('div');
     winMessage.id = 'win-message';
     winMessage.textContent = 'Congratulations! You won!';
@@ -517,7 +530,10 @@ function displayWin() {
     const newGameButton = document.createElement('button');
     newGameButton.id = 'new-game-button';
     newGameButton.textContent = 'Start New Game';
-    newGameButton.addEventListener('click', initGame);
+    newGameButton.addEventListener('click', () => {
+        document.body.removeChild(newGameButton);
+        initGame();
+    });
     document.body.appendChild(newGameButton);
 }
 
@@ -562,6 +578,36 @@ function loadSettings() {
 function updateSoundSetting(e) {
     soundEnabled = e.target.checked;
     saveSettings();
+}
+
+function resetMovesCounter() {
+    movesCount = 0;
+    updateMovesDisplay();
+}
+
+function incrementMovesCounter() {
+    movesCount++;
+    updateMovesDisplay();
+}
+
+function updateMovesDisplay() {
+    document.getElementById('moves-counter').textContent = `Moves: ${movesCount}`;
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    elapsedTime = 0;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+        elapsedTime++;
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const minutes = Math.floor(elapsedTime / 60);
+    const seconds = elapsedTime % 60;
+    document.getElementById('timer').textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
 initGame();

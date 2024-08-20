@@ -263,6 +263,16 @@ body {
     font-size: 36px;
 }
 
+#status {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: white;
+}
+
 @media (max-width: 600px) {
     .card {
         width: 40px;
