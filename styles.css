@@ -117,9 +117,9 @@ body {
     border-radius: 5px;
 }
 
+/* General Styles for Redo Button */
 #redo-button {
     position: absolute;
-    right: 5px;
     margin-top: 30px;
     transform: translate(-50%, -50%);
     background-color: rgba(255, 255, 255, 0.8);
@@ -136,8 +136,13 @@ body {
     z-index: 10;
 }
 
-#redo-button:hover {
-    background-color: rgba(255, 255, 255, 1);
+/* Styles for Left-Handed Users */
+#redo-button.right-handed {
+    right: 5px; /* Position on the right for right-handed users */
+}
+
+#redo-button:not(.right-handed) {
+    left: 45px; /* Position on the left for left-handed users */
 }
 
 #foundation {
@@ -273,15 +278,24 @@ body {
     color: white;
 }
 
+/* General Styles for Deck Counter */
 #deck-counter {
     position: absolute;
-    right: 5px;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
     border-radius: 5px;
     padding: 2px 5px;
     font-size: 12px;
     z-index: 5;
+}
+
+/* Styles for Left-Handed Users */
+#deck-counter.right-handed {
+    right: 5px; /* Position on the right for right-handed users */
+}
+
+#deck-counter:not(.right-handed) {
+    left: 5px; /* Position on the left for left-handed users */
 }
 
 @media (max-width: 600px) {

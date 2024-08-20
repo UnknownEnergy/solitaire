@@ -561,7 +561,9 @@ function updateHandPreference(e) {
 function applyHandPreference() {
     const topArea = document.querySelector('.top-area');
     const deckAndWaste = document.querySelector('.deck-and-waste');
-    [topArea, deckAndWaste].forEach(el => {
+    const redoButton = document.querySelector('#redo-button');
+    const deckCounter = document.querySelector('#deck-counter');
+    [topArea, deckAndWaste, redoButton, deckCounter].forEach(el => {
         if (el) el.classList.toggle('right-handed', handPreference === 'right');
     });
 }
