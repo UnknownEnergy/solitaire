@@ -11,6 +11,8 @@ let originalPosition;
 let movesCount = 0;
 let timerInterval;
 let elapsedTime = 0;
+let cardBackColor = '#007bff'; // Default color
+let backgroundColor = '#2c8f30'; // Default color
 
 function initGame() {
     [deck, waste, foundation, tableau] = [[], [], [[], [], [], []], [[], [], [], [], [], [], []]];
@@ -22,6 +24,8 @@ function initGame() {
     updateDeckCounter();
     renderGame();
     addEventListeners();
+    applyCardBackColor();
+    applyBackgroundColor();
 }
 
 function createDeck() {
@@ -116,6 +120,9 @@ function addEventListeners() {
     document.getElementById('draw-option').addEventListener('change', updateDrawOption);
     document.getElementById('sound-toggle').addEventListener('change', updateSoundSetting);
     document.getElementById('hand-preference').addEventListener('change', updateHandPreference);
+    document.getElementById('card-back-color').addEventListener('change', updateCardBackColor);
+    document.getElementById('background-color').addEventListener('change', updateBackgroundColor);
+
 }
 
 function addDragAndDropListeners() {
@@ -580,17 +587,21 @@ function applyHandPreference() {
 }
 
 function saveSettings() {
-    localStorage.setItem('solitaireSettings', JSON.stringify({drawCount, soundEnabled, handPreference}));
+    localStorage.setItem('solitaireSettings', JSON.stringify({drawCount, soundEnabled, handPreference, cardBackColor, backgroundColor}));
 }
 
 function loadSettings() {
     const savedSettings = JSON.parse(localStorage.getItem('solitaireSettings'));
     if (savedSettings) {
-        ({drawCount = 1, soundEnabled = true, handPreference = 'right'} = savedSettings);
+        ({drawCount = 1, soundEnabled = true, handPreference = 'right', cardBackColor = '#007bff', backgroundColor = '#2c8f30'} = savedSettings);
         document.getElementById('draw-option').value = drawCount;
         document.getElementById('hand-preference').value = handPreference;
         document.getElementById('sound-toggle').checked = soundEnabled;
+        document.getElementById('card-back-color').value = cardBackColor;
+        document.getElementById('background-color').value = backgroundColor;
         applyHandPreference();
+        applyCardBackColor();
+        applyBackgroundColor();
     }
 }
 
@@ -631,6 +642,62 @@ function updateTimerDisplay() {
 
 function updateDeckCounter() {
     document.getElementById('deck-counter').textContent = deck.length;
+}
+
+function updateCardBackColor(e) {
+    cardBackColor = e.target.value;
+    applyCardBackColor();
+    saveSettings();
+}
+
+function applyCardBackColor() {
+    const cardBacks = document.querySelectorAll('.card.back');
+
+    cardBacks.forEach(card => {
+        // Set the background color and gradient based on the selected color
+        const darkerColor = darkenColor(cardBackColor, 25); // Function to darken the color
+        card.style.background = `
+            ${cardBackColor} linear-gradient(135deg, ${cardBackColor} 25%, ${darkerColor} 25%, ${darkerColor} 50%, ${cardBackColor} 50%, ${cardBackColor} 75%, ${darkerColor} 75%, ${darkerColor} 100%)
+        `;
+        card.style.backgroundSize = '20px 20px';
+        card.style.color = 'transparent';
+        card.style.border = `2px solid ${darkerColor}`;
+    });
+}
+
+// Function to darken a hex color by a percentage
+function darkenColor(hex, percent) {
+    // Convert hex to RGB
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+
+    // Adjust the RGB values
+    r = Math.floor(r * (1 - percent / 100));
+    g = Math.floor(g * (1 - percent / 100));
+    b = Math.floor(b * (1 - percent / 100));
+
+    // Convert back to hex
+    const toHex = (c) => ('0' + c.toString(16)).slice(-2);
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function applyBackgroundColor() {
+    const darkerColor = darkenColor(backgroundColor, 10); // Darken the background color slightly
+    document.body.style.backgroundColor = backgroundColor;
+    document.body.style.backgroundImage = `
+        linear-gradient(90deg, ${backgroundColor} 25%, ${darkerColor} 25%, 
+        ${darkerColor} 50%, ${backgroundColor} 50%, 
+        ${backgroundColor} 75%, ${darkerColor} 75%, 
+        ${darkerColor} 100%)
+    `;
+    document.body.style.backgroundSize = '40px 40px';
+}
+
+function updateBackgroundColor(e) {
+    backgroundColor = e.target.value;
+    applyBackgroundColor();
+    saveSettings();
 }
 
 initGame();
