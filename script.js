@@ -54,15 +54,25 @@ function renderGame() {
 
 function renderArea(area) {
     const element = document.getElementById(area);
-    element.innerHTML = '';
 
     if (area === 'deck') {
-        element.appendChild(document.createElement('deck-counter'));
-        deck.length > 0 && element.appendChild(renderCard(deck[deck.length - 1], false));
+        const cardElements = element.querySelectorAll('.card');
+        cardElements.forEach(card => card.remove());
+
+        if (deck.length > 0) {
+            element.appendChild(renderCard(deck[deck.length - 1], false));
+        }
     } else if (area === 'waste') {
-        waste.length > 0 && element.appendChild(renderCard(waste[waste.length - 1]));
+        const wasteCards = element.querySelectorAll('.card');
+        wasteCards.forEach(card => card.remove());
+
+        if (waste.length > 0) {
+            element.appendChild(renderCard(waste[waste.length - 1]));
+        }
     } else if (area === 'foundation' || area === 'tableau') {
         const piles = area === 'foundation' ? foundation : tableau;
+        element.innerHTML = '';
+
         piles.forEach((pile, i) => {
             const pileElement = document.createElement('div');
             pileElement.classList.add('pile', `${area}-pile`);
@@ -81,6 +91,7 @@ function renderArea(area) {
         });
     }
 }
+
 
 function renderCard(card, faceUp = true) {
     const cardElement = document.createElement('div');
