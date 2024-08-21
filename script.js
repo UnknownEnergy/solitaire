@@ -24,8 +24,6 @@ function initGame() {
     updateDeckCounter();
     renderGame();
     addEventListeners();
-    applyCardBackColor();
-    applyBackgroundColor();
 }
 
 function createDeck() {
@@ -53,6 +51,8 @@ function renderGame() {
     ['deck', 'waste', 'foundation', 'tableau'].forEach(renderArea);
     addDragAndDropListeners();
     deck.length === 0 && waste.length > 0 ? showRedoButton() : hideRedoButton();
+    applyCardBackColor();
+    applyBackgroundColor();
     checkWin() && displayWin();
 }
 
