@@ -13,6 +13,8 @@ let timerInterval;
 let elapsedTime = 0;
 let cardBackColor = '#007bff'; // Default color
 let backgroundColor = '#2c8f30'; // Default color
+let moveHistory = [];
+let initialDealState = null;
 
 function initGame() {
     [deck, waste, foundation, tableau] = [[], [], [[], [], [], []], [[], [], [], [], [], [], []]];
@@ -24,6 +26,8 @@ function initGame() {
     updateDeckCounter();
     renderGame();
     addEventListeners();
+    moveHistory = [];
+    initialDealState = JSON.parse(JSON.stringify({deck, waste, foundation, tableau}));
 }
 
 function createDeck() {
@@ -122,7 +126,8 @@ function addEventListeners() {
     document.getElementById('hand-preference').addEventListener('change', updateHandPreference);
     document.getElementById('card-back-color').addEventListener('change', updateCardBackColor);
     document.getElementById('background-color').addEventListener('change', updateBackgroundColor);
-
+    document.getElementById('new-game-button').addEventListener('click', confirmNewGame);
+    document.getElementById('replay-button').addEventListener('click', confirmReplay);
 }
 
 function addDragAndDropListeners() {
@@ -430,6 +435,7 @@ function moveToFoundation(card, foundationIndex) {
         }
         playSound('card-place-sound');
         incrementMovesCounter();
+        saveGameState();
         renderGame();
     }
 }
@@ -452,6 +458,7 @@ function moveToTableau(cardData, tableauIndex) {
         tableau[tableauIndex].push(...sourceCards);
         playSound('card-place-sound');
         incrementMovesCounter();
+        saveGameState();
         renderGame();
     }
 }
@@ -536,6 +543,7 @@ function redoDeck() {
     deck.forEach(card => card.faceUp = false);
     updateDeckCounter();
     hideRedoButton();
+    saveGameState();
     renderGame();
 }
 
@@ -584,6 +592,34 @@ function applyHandPreference() {
     [topArea, deckAndWaste, redoButton, deckCounter].forEach(el => {
         if (el) el.classList.toggle('right-handed', handPreference === 'right');
     });
+}
+
+function newGame() {
+    location.reload();
+}
+
+function replayGame() {
+    ({deck, waste, foundation, tableau} = JSON.parse(JSON.stringify(initialDealState)));
+    moveHistory = [];
+    resetMovesCounter();
+    resetTimer();
+    renderGame();
+}
+
+function confirmNewGame() {
+    if (confirm("Are you sure you want to start a new game? Your current progress will be lost.")) {
+        newGame();
+    }
+}
+
+function confirmReplay() {
+    if (confirm("Are you sure you want to replay this game? Your current progress will be reset.")) {
+        replayGame();
+    }
+}
+
+function saveGameState() {
+    moveHistory.push(JSON.parse(JSON.stringify({deck, waste, foundation, tableau})));
 }
 
 function saveSettings() {
